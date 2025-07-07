@@ -1,0 +1,133 @@
+<div class="container mx-auto px-4 py-8">
+  <div class="max-w-6xl mx-auto">
+    <!-- Header -->
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-gray-900 mb-2">NEAR Block Explorer</h1>
+      <p class="text-gray-600">Explore blockchain transactions and transfers</p>
+    </div>
+
+    <!-- Gas Statistics Section -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+      <h2 class="text-xl font-semibold text-gray-800 mb-4">Gas Statistics</h2>
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="text-center">
+          <div class="text-2xl font-bold text-blue-600"><%= number_with_delimiter(@gas_statistics.average.round(2)) %></div>
+          <div class="text-sm text-gray-600">Average Gas Burnt</div>
+        </div>
+        <div class="text-center">
+          <div class="text-2xl font-bold text-green-600"><%= number_with_delimiter(@gas_statistics.total) %></div>
+          <div class="text-sm text-gray-600">Total Gas</div>
+        </div>
+        <div class="text-center">
+          <div class="text-2xl font-bold text-purple-600"><%= number_with_delimiter(@gas_statistics.count) %></div>
+          <div class="text-sm text-gray-600">Transactions</div>
+        </div>
+        <div class="text-center">
+          <div class="text-lg font-bold text-gray-600"><%= number_with_delimiter(@gas_statistics.min) %> - <%= number_with_delimiter(@gas_statistics.max) %></div>
+          <div class="text-sm text-gray-600">Min - Max Gas</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Transfers List -->
+    <div class="bg-white rounded-lg shadow-md">
+      <div class="px-6 py-4 border-b border-gray-200">
+        <h2 class="text-xl font-semibold text-gray-800">Recent Transfers</h2>
+        <% if @last_sync %>
+          <p class="text-sm text-gray-600 mt-1">Last updated: <%= @last_sync.strftime("%B %d, %Y at %I:%M %p") %></p>
+        <% end %>
+      </div>
+
+      <% if @has_data %>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Transaction Hash
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Sender
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Receiver
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Deposit
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Block Height
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Gas Burnt
+                </th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <% @transfers.each do |transfer| %>
+                <tr class="hover:bg-gray-50">
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-sm font-mono text-gray-900">
+                      <%= format_transaction_hash(transfer.transaction.transaction_hash) %>
+                    </div>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-sm text-gray-900">
+                      <%= format_address(transfer.sender) %>
+                    </div>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-sm text-gray-900">
+                      <%= format_address(transfer.receiver) %>
+                    </div>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-sm font-medium text-blue-600">
+                      <%= format_near_amount(transfer.deposit) %>
+                    </div>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-sm text-gray-900">
+                      <%= number_with_delimiter(transfer.transaction.block.height) %>
+                    </div>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-sm <%= gas_color_class(transfer.transaction.gas_burnt) %>">
+                      <%= number_with_delimiter(transfer.transaction.gas_burnt) %>
+                    </div>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% else %>
+        <div class="px-6 py-8 text-center">
+          <div class="text-gray-500">
+            <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">No transfers found</h3>
+            <p class="text-gray-600">No transfer transactions have been synced yet.</p>
+            <p class="text-sm text-gray-500 mt-2">Run the sync job to fetch transactions from the blockchain.</p>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <!-- Footer Info -->
+    <div class="mt-8 text-center text-gray-500 text-sm">
+      <p>Showing up to 50 most recent transfers</p>
+      <% if @chains.any? %>
+        <p class="mt-2">
+          Supported chains: 
+          <% @chains.each do |chain| %>
+            <span class="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs mr-2">
+              <%= chain.name %>
+            </span>
+          <% end %>
+        </p>
+      <% end %>
+    </div>
+  </div>
+</div>
